@@ -1,12 +1,389 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tobias Chia</title>
+    <title>AI故事情节工具 - Story Plotting Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
-<body>
-    <h1>Welcome to Tobias Chia's Website</h1>
-    <p>This is the homepage.</p>
+<body class="bg-gray-50">
+    <div id="app">
+        <header class="bg-blue-600 text-white p-6">
+            <div class="container mx-auto">
+                <h1 class="text-3xl font-bold">AI故事情节工具</h1>
+                <p class="text-blue-100 mt-2">智能化故事创作助手</p>
+            </div>
+        </header>
+
+        <main class="container mx-auto p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow" @click="activeService = 'character'">
+                    <div class="text-green-600 text-2xl mb-3">👤</div>
+                    <h3 class="text-lg font-semibold mb-2">角色创建</h3>
+                    <p class="text-gray-600 text-sm">生成详细的角色背景和性格</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow" @click="activeService = 'plot'">
+                    <div class="text-purple-600 text-2xl mb-3">📖</div>
+                    <h3 class="text-lg font-semibold mb-2">情节生成</h3>
+                    <p class="text-gray-600 text-sm">创建引人入胜的故事大纲</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow" @click="activeService = 'scene'">
+                    <div class="text-orange-600 text-2xl mb-3">🏞️</div>
+                    <h3 class="text-lg font-semibold mb-2">场景描述</h3>
+                    <p class="text-gray-600 text-sm">生动的环境和场景设定</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow" @click="activeService = 'dialogue'">
+                    <div class="text-red-600 text-2xl mb-3">💬</div>
+                    <h3 class="text-lg font-semibold mb-2">对话生成</h3>
+                    <p class="text-gray-600 text-sm">符合角色性格的对话内容</p>
+                </div>
+            </div>
+
+            <!-- 角色创建界面 -->
+            <div v-if="activeService === 'character'" class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">角色创建工具</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">角色类型</label>
+                        <select v-model="characterForm.type" class="w-full p-3 border border-gray-300 rounded-md">
+                            <option value="">选择角色类型...</option>
+                            <option value="hero">主角/英雄</option>
+                            <option value="villain">反派</option>
+                            <option value="sidekick">配角</option>
+                            <option value="mentor">导师</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">故事类型</label>
+                        <select v-model="characterForm.genre" class="w-full p-3 border border-gray-300 rounded-md">
+                            <option value="">选择故事类型...</option>
+                            <option value="fantasy">奇幻</option>
+                            <option value="scifi">科幻</option>
+                            <option value="romance">言情</option>
+                            <option value="mystery">悬疑</option>
+                            <option value="historical">历史</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">角色背景描述</label>
+                        <textarea v-model="characterForm.background" 
+                                class="w-full p-3 border border-gray-300 rounded-md h-24" 
+                                placeholder="简单描述角色的背景、职业或特殊经历..."></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-4">
+                    <button @click="generateCharacterPrompt" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                        生成提示词
+                    </button>
+                    <button @click="copyToClipboard(characterPrompt)" 
+                            v-if="characterPrompt" 
+                            class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700">
+                        复制提示词
+                    </button>
+                </div>
+
+                <div v-if="characterPrompt" class="mt-6 p-4 bg-gray-100 rounded-md">
+                    <h3 class="font-medium mb-2">生成的提示词:</h3>
+                    <pre class="text-sm text-gray-700 whitespace-pre-wrap">{{ characterPrompt }}</pre>
+                </div>
+            </div>
+
+            <!-- 情节生成界面 -->
+            <div v-if="activeService === 'plot'" class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">情节生成工具</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">故事主题</label>
+                        <input v-model="plotForm.theme" 
+                               type="text" 
+                               class="w-full p-3 border border-gray-300 rounded-md" 
+                               placeholder="例如: 友谊、复仇、成长...">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">故事长度</label>
+                        <select v-model="plotForm.length" class="w-full p-3 border border-gray-300 rounded-md">
+                            <option value="">选择故事长度...</option>
+                            <option value="short">短篇 (5-10章)</option>
+                            <option value="medium">中篇 (10-20章)</option>
+                            <option value="long">长篇 (20+章)</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">核心冲突</label>
+                        <textarea v-model="plotForm.conflict" 
+                                class="w-full p-3 border border-gray-300 rounded-md h-24" 
+                                placeholder="描述故事的主要冲突或问题..."></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-4">
+                    <button @click="generatePlotPrompt" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                        生成提示词
+                    </button>
+                    <button @click="copyToClipboard(plotPrompt)" 
+                            v-if="plotPrompt" 
+                            class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700">
+                        复制提示词
+                    </button>
+                </div>
+
+                <div v-if="plotPrompt" class="mt-6 p-4 bg-gray-100 rounded-md">
+                    <h3 class="font-medium mb-2">生成的提示词:</h3>
+                    <pre class="text-sm text-gray-700 whitespace-pre-wrap">{{ plotPrompt }}</pre>
+                </div>
+            </div>
+
+            <!-- 场景描述界面 -->
+            <div v-if="activeService === 'scene'" class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">场景描述工具</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">场景类型</label>
+                        <select v-model="sceneForm.type" class="w-full p-3 border border-gray-300 rounded-md">
+                            <option value="">选择场景类型...</option>
+                            <option value="indoor">室内</option>
+                            <option value="outdoor">户外</option>
+                            <option value="urban">城市</option>
+                            <option value="nature">自然</option>
+                            <option value="fantasy">奇幻世界</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">时间设定</label>
+                        <select v-model="sceneForm.time" class="w-full p-3 border border-gray-300 rounded-md">
+                            <option value="">选择时间...</option>
+                            <option value="morning">清晨</option>
+                            <option value="day">白天</option>
+                            <option value="evening">傍晚</option>
+                            <option value="night">夜晚</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">场景要素</label>
+                        <textarea v-model="sceneForm.elements" 
+                                class="w-full p-3 border border-gray-300 rounded-md h-24" 
+                                placeholder="描述场景中的重要元素、氛围、特殊物品等..."></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-4">
+                    <button @click="generateScenePrompt" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                        生成提示词
+                    </button>
+                    <button @click="copyToClipboard(scenePrompt)" 
+                            v-if="scenePrompt" 
+                            class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700">
+                        复制提示词
+                    </button>
+                </div>
+
+                <div v-if="scenePrompt" class="mt-6 p-4 bg-gray-100 rounded-md">
+                    <h3 class="font-medium mb-2">生成的提示词:</h3>
+                    <pre class="text-sm text-gray-700 whitespace-pre-wrap">{{ scenePrompt }}</pre>
+                </div>
+            </div>
+
+            <!-- 对话生成界面 -->
+            <div v-if="activeService === 'dialogue'" class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">对话生成工具</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">对话类型</label>
+                        <select v-model="dialogueForm.type" class="w-full p-3 border border-gray-300 rounded-md">
+                            <option value="">选择对话类型...</option>
+                            <option value="conflict">冲突对话</option>
+                            <option value="romantic">浪漫对话</option>
+                            <option value="casual">日常对话</option>
+                            <option value="dramatic">戏剧对话</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">参与人数</label>
+                        <select v-model="dialogueForm.participants" class="w-full p-3 border border-gray-300 rounded-md">
+                            <option value="2">两人对话</option>
+                            <option value="3">三人对话</option>
+                            <option value="group">群体对话</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">角色设定</label>
+                        <textarea v-model="dialogueForm.characters" 
+                                class="w-full p-3 border border-gray-300 rounded-md h-24" 
+                                placeholder="描述参与对话的角色性格、关系、背景..."></textarea>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">对话目标</label>
+                        <textarea v-model="dialogueForm.goal" 
+                                class="w-full p-3 border border-gray-300 rounded-md h-16" 
+                                placeholder="这段对话要达成什么目标？推进什么情节？"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-4">
+                    <button @click="generateDialoguePrompt" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                        生成提示词
+                    </button>
+                    <button @click="copyToClipboard(dialoguePrompt)" 
+                            v-if="dialoguePrompt" 
+                            class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700">
+                        复制提示词
+                    </button>
+                </div>
+
+                <div v-if="dialoguePrompt" class="mt-6 p-4 bg-gray-100 rounded-md">
+                    <h3 class="font-medium mb-2">生成的提示词:</h3>
+                    <pre class="text-sm text-gray-700 whitespace-pre-wrap">{{ dialoguePrompt }}</pre>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+        
+        createApp({
+            data() {
+                return {
+                    activeService: 'character',
+                    characterForm: {
+                        type: '',
+                        genre: '',
+                        background: ''
+                    },
+                    plotForm: {
+                        theme: '',
+                        length: '',
+                        conflict: ''
+                    },
+                    sceneForm: {
+                        type: '',
+                        time: '',
+                        elements: ''
+                    },
+                    dialogueForm: {
+                        type: '',
+                        participants: '2',
+                        characters: '',
+                        goal: ''
+                    },
+                    characterPrompt: '',
+                    plotPrompt: '',
+                    scenePrompt: '',
+                    dialoguePrompt: ''
+                }
+            },
+            methods: {
+                generateCharacterPrompt() {
+                    const form = this.characterForm
+                    this.characterPrompt = `你是一个专业的故事创作助手。请根据以下信息创建一个详细的角色：
+
+角色类型：${form.type || '未指定'}
+故事类型：${form.genre || '未指定'}
+背景描述：${form.background || '无特殊背景'}
+
+请为这个角色生成以下内容：
+1. 基本信息（姓名、年龄、外貌特征）
+2. 性格特点（至少3个主要特质）
+3. 背景故事（成长经历、重要事件）
+4. 动机和目标（角色的驱动力）
+5. 弱点和恐惧（角色的脆弱面）
+6. 特殊技能或能力
+7. 人际关系（与其他角色的关系）
+
+请确保角色有血有肉，富有立体感和可信度。`
+                },
+                
+                generatePlotPrompt() {
+                    const form = this.plotForm
+                    this.plotPrompt = `你是一个经验丰富的故事架构师。请根据以下信息创建一个完整的故事大纲：
+
+故事主题：${form.theme || '未指定'}
+故事长度：${form.length || '未指定'}
+核心冲突：${form.conflict || '未描述'}
+
+请创建包含以下元素的故事大纲：
+1. 故事背景设定
+2. 主要角色介绍
+3. 三幕结构：
+   - 第一幕：开端和冲突建立
+   - 第二幕：发展和高潮
+   - 第三幕：解决和结局
+4. 关键转折点（至少3个）
+5. 子情节线索
+6. 主题深化方式
+
+确保情节逻辑清晰，节奏把控得当，能够引起读者的情感共鸣。`
+                },
+                
+                generateScenePrompt() {
+                    const form = this.sceneForm
+                    this.scenePrompt = `你是一个擅长环境描写的作家。请根据以下信息创建一个生动的场景描述：
+
+场景类型：${form.type || '未指定'}
+时间设定：${form.time || '未指定'}
+场景要素：${form.elements || '无特殊要求'}
+
+请创建一个详细的场景描述，包含：
+1. 视觉描述（颜色、光线、形状）
+2. 听觉描述（声音、音效）
+3. 嗅觉和触觉描述
+4. 氛围营造
+5. 场景中的关键物品或标志
+6. 场景如何影响角色的情绪
+7. 场景与故事情节的关联
+
+描述要生动具体，让读者仿佛身临其境。避免过于抽象的表达，多用具体的细节。`
+                },
+                
+                generateDialoguePrompt() {
+                    const form = this.dialogueForm
+                    this.dialoguePrompt = `你是一个对话写作专家。请根据以下信息创建自然流畅的角色对话：
+
+对话类型：${form.type || '未指定'}
+参与人数：${form.participants}
+角色设定：${form.characters || '未描述'}
+对话目标：${form.goal || '未明确'}
+
+请创建符合以下要求的对话：
+1. 每个角色都有独特的说话方式
+2. 对话推进情节发展
+3. 体现角色之间的关系动态
+4. 包含潜台词和情感层次
+5. 自然的对话节奏和停顿
+6. 适当的肢体动作和表情描述
+7. 符合角色性格的用词和语调
+
+对话要听起来真实可信，避免过于说教或刻意。每句话都应该有其存在的意义。`
+                },
+                
+                async copyToClipboard(text) {
+                    try {
+                        await navigator.clipboard.writeText(text)
+                        alert('提示词已复制到剪贴板！')
+                    } catch (err) {
+                        alert('复制失败，请手动选择文本复制')
+                    }
+                }
+            }
+        }).mount('#app')
+    </script>
 </body>
 </html>
